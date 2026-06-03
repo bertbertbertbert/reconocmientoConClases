@@ -1,0 +1,80 @@
+import face_recognition
+from conexion_bbdd import conexion_bbdd
+
+
+class consultas_bbdd:
+
+    def __init__(self):
+        self.db = conexion_bbdd()
+
+    def verificar_usuario_password(self, usuario, password):
+        try:
+            conn = self.db.obtener_conexion()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT code_usuario FROM usuarios_test WHERE code_usuario = %s AND password = %s",
+                (usuario, password))
+            resultado = cur.fetchone()
+            cur.close()
+            if resultado:
+                return {"ok": True, "usuario": usuario}
+            return {"ok": False}
+        except Exception as e:
+            print(f"Error al verificar usuario: {e}")
+            return {"ok": False}
+
+    def registrar_usuario_nuevo(self, code_usuario, ruta_foto):
+        try:
+            imagen = face_recognition.load_image_file(ruta_foto)
+            encodings = face_recognition.face_encodings(imagen)
+            if len(encodings) == 0:
+                print(f"Error: No se detectó rostro en la foto de {code_usuario}")
+                return False
+            vector_128 = encodings[0]
+            conn = self.db.obtener_conexion()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT id_usuario FROM usuarios WHERE code_usuario = %s;", (code_usuario,))
+            if cur.fetchone():
+                print("Aviso: El usuario ya existe. Se actualizara su fotografía")
+                cur.execute(
+                    "UPDATE usuarios SET vector_128 = %s WHERE code_usuario = %s;",
+                    (vector_128, code_usuario))
+            else:
+                cur.execute(
+                    "INSERT INTO usuarios (code_usuario, vector_128) VALUES (%s, %s);",
+                    (code_usuario, vector_128))
+            conn.commit()
+            cur.close()
+            return True
+        except Exception as e:
+            print(f"Error en consulta de base de datos: {e}")
+            return False
+
+    def registrar_video_login(self, nombre_encontrado, fecha_bd, nombre_archivo):
+        try:
+            conn = self.db.obtener_conexion()
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO videos (code_usuario, fecha_video, ruta_video) VALUES (%s, %s, %s);",
+                (nombre_encontrado, fecha_bd, nombre_archivo))
+            conn.commit()
+            cur.close()
+        except Exception as e:
+            print(f"Error en consulta de base de datos: {e}")
+
+    def buscar_usuario_asincrono(self, encoding, usuario):
+        try:
+            conn = self.db.obtener_conexion()
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT code_usuario, vector_128 <-> %s AS distancia 
+                    FROM usuarios 
+                    WHERE vector_128 <-> %s < 0.55 AND code_usuario = %s
+                    ORDER BY distancia ASC 
+                    LIMIT 1;
+                """, (encoding, encoding, usuario))
+                return cur.fetchone()
+        except Exception as e:
+            print(f"Error asíncrono en DB: {e}")
+            return None
