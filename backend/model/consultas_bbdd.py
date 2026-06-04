@@ -12,7 +12,7 @@ class consultas_bbdd:
             conn = self.db.obtener_conexion()
             cur = conn.cursor()
             cur.execute(
-                "SELECT code_usuario FROM usuarios_test WHERE code_usuario = %s AND password = %s",
+                "SELECT code_usuario FROM usuarios WHERE code_usuario = %s AND password = %s",
                 (usuario, password))
             resultado = cur.fetchone()
             cur.close()
@@ -23,32 +23,53 @@ class consultas_bbdd:
             print(f"Error al verificar usuario: {e}")
             return {"ok": False}
 
-    def registrar_usuario_nuevo(self, code_usuario, ruta_foto):
+    def verificar_registro(self, usuario, password, encoding):
+        print("entra en funcion de registro")
         try:
-            imagen = face_recognition.load_image_file(ruta_foto)
-            encodings = face_recognition.face_encodings(imagen)
-            if len(encodings) == 0:
-                print(f"Error: No se detectó rostro en la foto de {code_usuario}")
-                return False
-            vector_128 = encodings[0]
             conn = self.db.obtener_conexion()
             cur = conn.cursor()
             cur.execute(
-                "SELECT id_usuario FROM usuarios WHERE code_usuario = %s;", (code_usuario,))
+                "SELECT code_usuario FROM usuarios WHERE code_usuario = %s;", (usuario,))
             if cur.fetchone():
-                print("Aviso: El usuario ya existe. Se actualizara su fotografía")
-                cur.execute(
-                    "UPDATE usuarios SET vector_128 = %s WHERE code_usuario = %s;",
-                    (vector_128, code_usuario))
+                conn.commit()
+                cur.close()
+                return {"ok":False, "msj":"El usuario ya existe"}
             else:
                 cur.execute(
-                    "INSERT INTO usuarios (code_usuario, vector_128) VALUES (%s, %s);",
-                    (code_usuario, vector_128))
+                    "INSERT INTO usuarios (code_usuario, password, vector_128) VALUES (%s, %s, %s);",
+                    (usuario, password, encoding))
+            conn.commit()
+            cur.close()
+            print("usuario registrado")
+            return {"ok": True, "usuario": usuario}
+        except Exception as e:
+            print(f"Error en consulta de base de datos: {e}")
+            return {"ok": False, "msj": "Error ejecutando la query"}
+        
+    def guardar_encoding(self, usuario, encoding):
+        try:
+            conn = self.db.obtener_conexion()
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE usuarios SET vector_128 = %s WHERE code_usuario = %s;",
+                (encoding, usuario))
             conn.commit()
             cur.close()
             return True
         except Exception as e:
-            print(f"Error en consulta de base de datos: {e}")
+            print(f"Error guardando encoding: {e}")
+            return False
+            
+    def borrar_usuario(self, usuario):
+        try:
+            conn = self.db.obtener_conexion()
+            cur = conn.cursor()
+            cur.execute("DELETE FROM usuarios WHERE code_usuario = %s;", (usuario,))
+            conn.commit()
+            cur.close()
+            return True
+        except Exception as e:
+            print(f"Error borrando usuario: {e}")
             return False
 
     def registrar_video_login(self, nombre_encontrado, fecha_bd, nombre_archivo):

@@ -8,7 +8,7 @@ class estado_sesion:
         self.db_ready = False
         self.resultado_db = None
         self.fps_real = 30
-        self.contador = 0
+        self.contadorFrames = 0
         self.inicio = time.time()
         self.buffer = deque(maxlen=150)
         self.total_parpadeos = 0
