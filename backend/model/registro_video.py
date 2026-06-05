@@ -1,17 +1,14 @@
 import cv2
 from datetime import datetime
 import os
-from consultas_bbdd import consultas_bbdd
 
 class registro_video:
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    RUTA_VIDEOS = os.path.join(BASE_DIR, '..', 'videos')
-
-    def __init__(self):
-        self.db = consultas_bbdd()
-
-    def crear_video_registro(self, buffer, usuario, fps_real):
+    RUTA_VIDEOS = os.path.join(BASE_DIR, '..', '..', 'videos')
+    
+    
+    def crearVideoRegistro(self, buffer, usuario, fps_real):
         try:
             os.makedirs(self.RUTA_VIDEOS, exist_ok=True)
             fecha = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")

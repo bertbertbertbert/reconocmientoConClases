@@ -1,6 +1,4 @@
-import face_recognition
-from conexion_bbdd import conexion_bbdd
-
+from model.conexion_bbdd import conexion_bbdd
 
 class consultas_bbdd:
 

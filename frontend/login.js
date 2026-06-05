@@ -31,7 +31,7 @@ loginForm.addEventListener("submit", async (e) => {
     if (data.ok) {
         loginForm.style.display = 'none';
         registroForm.style.display = 'none';
-        document.getElementById('biometria').style.display = 'block';
+        document.getElementById('biometria').style.display = 'flex';
 
          loginBiometrica(data.usuario);
         // 2. Aquí pasas a fase biométrica
@@ -67,16 +67,15 @@ registroForm.addEventListener("submit", async (e) => {
     } else {
         loginForm.style.display = 'none';
         registroForm.style.display = 'none';
-        document.getElementById('biometria').style.display = 'block';
+        document.getElementById('biometria').style.display = 'flex';
         registroBiometrica(usuario);
     }
 });
 
 const loginBiometrica = (usuario)=>{
-
 // Conectar WebSocket
 const ws = new WebSocket(`ws://localhost:8000/ws_login?usuario=${usuario}`); //websocket protocol que manté la conexió oberta 
-
+let msj;
 //funcion de websocker que se ejecuta cuando se inicia conexion
 ws.onopen = () => {
     mensaje.textContent = 'Conectado al servidor';
@@ -88,6 +87,7 @@ ws.onmessage = (event) => {
      const data = JSON.parse(event.data);
      mensaje.textContent = data.desc;
      mostrarOverlayInfo(data) 
+     msj = data.desc;
 };
 
 //funcion que se ejecuta al cerrar conexion
@@ -99,6 +99,14 @@ ws.onclose = () => {
   }
     ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
     mensaje.textContent = mensaje.textContent + ' Desconectado del servidor';
+    if(msj.includes('aceptado')){
+    document.getElementById('mensaje_bienvenida').style.display = 'block';
+    document.getElementById('mensaje_bienvenida').textContent = `Hola, ${usuario}`;
+    mensaje.style.display= "none";
+  } 
+  else{
+    document.getElementById('mensaje_bienvenida').textContent = ` ${msj}`;
+  }
 };
 
 // Activar cámara
@@ -196,6 +204,9 @@ const registroBiometrica = (usuario) =>{
             stream.getTracks().forEach(track => track.stop())
             video.srcObject = null;
         }
+        document.getElementById('mensaje_bienvenida').style.display = 'block';
+        document.getElementById('mensaje_bienvenida').textContent = `Resitrar l'usuari ${usuario}`;
+        mensaje.style.display= "none";
     };
 
     navigator.mediaDevices.getUserMedia({ video: true })

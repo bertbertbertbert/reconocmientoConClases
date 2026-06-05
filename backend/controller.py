@@ -1,19 +1,16 @@
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), 'model'))
 import time
 import threading
 from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 import uvicorn
-from registro_video import registro_video
-from validacion_ojos import validacion_ojos
-from estado_sesion import estado_sesion
-from procesador_frames_cv2 import procesador_frames
-from detector_puntos_faciales_mediapipe import detector_puntos_faciales
-from encoding_cara_face_recognition import encoding_cara
-from consultas_bbdd import consultas_bbdd
-from construir_json import construir_json
+from model.registro_video import registro_video
+from model.validacion_ojos import validacion_ojos
+from model.estado_sesion import estado_sesion
+from model.procesador_frames_cv2 import procesador_frames
+from model.detector_puntos_faciales_mediapipe import detector_puntos_faciales
+from model.encoding_cara_face_recognition import encoding_cara
+from model.consultas_bbdd import consultas_bbdd
+from model.construir_json import construir_json
 
 
 class controller:
@@ -26,7 +23,7 @@ class controller:
         self.password = ""
         self.registrar_rutas()
 
-    #conecta el tipo de conexión con la función que se debe ejecutar con cada conexi´pn
+    #conecta el tipo de conexión con la función que se debe ejecutar con cada conexópn
     def registrar_rutas(self):
         self.app.post("/auth/start-login")(self.start_login)
         self.app.post("/auth/start_registro")(self.start_registro)
@@ -180,6 +177,9 @@ class controller:
                 if es.reconocido:
                     es.frames_tras_validacion += 1
                 
+                frame = pf.overlay(frame, es.usuario_encontrado, es.reconocido, es.total_parpadeos, es.nombre, es.fps_real, left, right, top, bottom, w)
+                es.buffer.append(frame)
+                
                 #una vez se ha cumplido el tiempo establecido para mostrar que el usario se ha validado correctamente, salimos
                 await websocket.send_json(construir_json.construir_json(es, num_caras, PARPADEOS_REQUERIDOS, left, top, right, bottom))
                 if es.reconocido and es.frames_tras_validacion >= MAX_ESPERA:
@@ -216,7 +216,7 @@ class controller:
 
                     if segundos_con_cara >= 5:  # han pasado 5 segundos con cara detectada
                         puntos_cara = resultados.face_landmarks[0]
-                        print(puntos_cara)
+
                         x_coords = [int(p.x * w) for p in puntos_cara]
                         y_coords = [int(p.y * h) for p in puntos_cara]
                         left, right = min(x_coords), max(x_coords)

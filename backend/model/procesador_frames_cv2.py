@@ -34,5 +34,5 @@ class procesador_frames:
         (ancho_texto, _), _ = cv2.getTextSize(texto_fps, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
         cv2.putText(frame, texto_fps, (w - ancho_texto - 10, 30),
         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
-
+        
         return frame
