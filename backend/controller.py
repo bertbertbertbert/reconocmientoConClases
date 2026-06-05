@@ -177,6 +177,7 @@ class controller:
                 if es.reconocido:
                     es.frames_tras_validacion += 1
                 
+                #manda el frame al metodo de la clase procesarFrame para añadir datos a la imagen y luego añade el frame al buffer(video logueo)
                 frame = pf.overlay(frame, es.usuario_encontrado, es.reconocido, es.total_parpadeos, es.nombre, es.fps_real, left, right, top, bottom, w)
                 es.buffer.append(frame)
                 
